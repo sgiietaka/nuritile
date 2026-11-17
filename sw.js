@@ -1,6 +1,6 @@
 // ぬりタイル：ネットなしでも動かすための仕組み
 // アプリを更新したときは、下の VERSION の数字を1つ上げてください。
-const VERSION = "v1";
+const VERSION = "v3";
 const CACHE = "nuritile-" + VERSION;
 const FILES = [
   "./",

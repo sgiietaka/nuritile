@@ -268,7 +268,7 @@ const WEAPONS=[
   {name:'遠距離ライフル',desc:'速くて遠くまで届く一発。2発で相手を倒せる。次の弾までが遅い',st:[5,5,1,2],n:1,spread:0,jit:.01,spd:72,life:.4,sz:.3,dmg:60,cd:.6,ink:8,end:1.6,drip:.9,dripT:.012,arc:.12,splash:0},
   {name:'大玉ドカン',desc:'大きく遅い玉が弾けて、まわりも巻き込む',st:[4,2,1,5],n:1,spread:0,jit:.03,spd:22,life:.48,sz:.9,dmg:45,cd:.6,ink:9,end:3,drip:.9,dripT:.06,arc:2,splash:2.8},
   {name:'ダブルポンプ',desc:'両手の銃から2本のインクを同時に撃つ。幅広くまっすぐ塗れる',st:[3,3,4,4],dual:true,n:2,spread:0,jit:.05,spd:42,life:.3,sz:.26,dmg:8,cd:.1,ink:1.6,end:1.25,drip:.55,dripT:.035,arc:.5,splash:0},
-  {name:'はたきグローブ',desc:'左右の手で交互に前をはたく近距離武器。はたいている間は、飛んでくる相手のインクやボムをすくい取って防ぎ、自分のインクにする',st:[4,1,4,3],glove:true,n:0,spread:0,jit:0,spd:12,life:.28,sz:.3,dmg:34,cd:.3,ink:3,end:1,drip:.5,dripT:.05,arc:.3,splash:0,rollWidth:1.6}];
+  {name:'はたきグローブ',desc:'等身大の大きなグローブを、うちわのように縦に持って左右に振る近距離武器。振るたびにインクをまき散らして前方を広く塗り、振っている間は飛んでくる相手のインクやボムを払いのけて、自分のインクにする',st:[4,1,4,4],glove:true,slap:34,n:0,spread:0,jit:0,spd:13,life:.3,sz:.3,dmg:6,cd:.3,ink:3,end:1.3,drip:.5,dripT:.05,arc:.3,splash:0,rollWidth:1.6}];
 const SPECS={barrier:{name:'バリア',dur:6,desc:'6秒間、バリアを張ってダメージを受けない'},range:{name:'ロングレンジ',dur:8,desc:'8秒間、射程が約1.6倍に伸びる'},paint:{name:'塗り倍増',dur:8,desc:'8秒間、インクの塗り範囲が2倍になる'},
   bigbomb:{name:'特大ボム',dur:1.5,desc:'自分の足元に特大の玉ボムを置く。1.5秒後に大爆発して、まわりを広く塗り大ダメージ'},
   stamp:{name:'大スタンプ',dur:8,desc:'8秒間、大きなスタンプを前に突きながら進む。突いた所を大きく塗り、当たった相手に大ダメージ。前からの攻撃はスタンプが盾になってほぼ効かない'},
@@ -463,9 +463,11 @@ const KINDS=['roller','fudeS','gun','rifle','bucket','dual','glove'];
 function animChar(c,p,now,moving,i){const k=p.spT>0&&p.spec==='stamp'?'stamp':(KINDS[p.wep.wi]||'gun');
   if(c.kind!==k){for(const key in c.W)c.W[key].visible=false;if(k==='dual')c.W.dualR.visible=c.W.dualL.visible=true;else c.W[k].visible=true;c.kind=k}
   const run=moving&&p.vz===0,ph=now*12+i,sw=p.swing,roll=p.rolling&&p.ink>0&&moving,ra=c.arms[1],la=c.arms[0];
-  ra.rotation.y=la.rotation.y=0;c.mitts.forEach(m=>{m.visible=k==='glove';m.scale.set(1,1.15,.8).multiplyScalar(p.scoopT>0?1.35:1)});
-  if(k==='glove'){c.legs[0].rotation.z=run?Math.sin(ph)*.7:0;c.legs[1].rotation.z=run?-Math.sin(ph)*.7:0;const u=p.gT>0?1-p.gT/.22:1,act=p.gT>0?(p.side?ra:la):null;
-    ra.rotation.z=la.rotation.z=1.1;if(act){act.rotation.z=1.5;act.rotation.y=(act===ra?-1:1)*(1.1-2.2*u)}return}
+  ra.rotation.y=la.rotation.y=ra.rotation.x=la.rotation.x=0;c.mitts.forEach(m=>{m.visible=false});
+  if(k==='glove'){c.legs[0].rotation.z=run?Math.sin(ph)*.7:0;c.legs[1].rotation.z=run?-Math.sin(ph)*.7:0;const G=c.W.glove,face=G.userData.face,dir=p.side?1:-1;let yaw;
+    if(p.gT>0){const u=1-p.gT/.22,e=u*u*(3-2*u);yaw=dir*(1-2*e);face.rotation.y=-dir*.7*Math.sin(u*Math.PI)}else{yaw=(c.gy||0)*.88;face.rotation.y=0}
+    c.gy=yaw;G.rotation.y=yaw;face.rotation.z=-.08;G.scale.setScalar(p.scoopT>0?1.08:1);
+    ra.rotation.z=la.rotation.z=1.3;ra.rotation.y=la.rotation.y=yaw*.9;return}
   c.legs[0].rotation.z=run?Math.sin(ph)*.7:0;c.legs[1].rotation.z=run?-Math.sin(ph)*.7:0;
   if(k==='stamp'){c.W.stamp.scale.setScalar(p.guardT>0?1.12:1);if(p.guardT>0)p.guardT-=.016;const lift=Math.min(1,(.5-(p.stT||0))/.4);c.W.stamp.position.set(2.6,.05+Math.max(0,lift)*2.2-(p.z-hP(p.x,p.y)),0);ra.rotation.z=1.5;la.rotation.z=1.5;return}
   if(k==='roller'){const w=c.W.roller;w.position.set(.55,1.25,.5);w.rotation.z=sw*1.3;ra.rotation.z=1.1}
@@ -480,7 +482,10 @@ function makeChar(team){
   // legs and arms pivot at hip / shoulder
   const legs=[];for(const s of [-1,1]){const lg=new THREE.Group();lg.position.set(0,.85,.2*s);g.add(lg);M(new THREE.CylinderGeometry(.15,.13,.75,8),pants,0,-.38,0,lg);M(new THREE.BoxGeometry(.38,.16,.24),shoe,.08,-.79,0,lg);legs.push(lg)}
   M(new THREE.CylinderGeometry(.36,.42,.8,12),bodyM,0,1.25,0);M(new THREE.CylinderGeometry(.43,.43,.12,12),dark,0,.88,0);
-  const arms=[],mitts=[];for(const s of [-1,1]){const ag=new THREE.Group();ag.position.set(0,1.55,.5*s);g.add(ag);M(new THREE.CylinderGeometry(.11,.1,.62,8),bodyM,0,-.3,0,ag);M(new THREE.SphereGeometry(.12,8,6),skin,0,-.64,0,ag);const mt=M(new THREE.SphereGeometry(.36,14,10),bodyM,0,-.72,0,ag);mt.scale.set(1,1.15,.8);mt.visible=false;mitts.push(mt);arms.push(ag)}
+  const arms=[],mitts=[];for(const s of [-1,1]){const ag=new THREE.Group();ag.position.set(0,1.55,.5*s);g.add(ag);M(new THREE.CylinderGeometry(.11,.1,.62,8),bodyM,0,-.3,0,ag);M(new THREE.SphereGeometry(.12,8,6),skin,0,-.64,0,ag);const mt=new THREE.Group();mt.position.set(0,-.64,0);ag.add(mt);M(new THREE.CylinderGeometry(.3,.26,.36,14),L(0xf4f1ea),0,-.1,0,mt);
+    M(new THREE.SphereGeometry(1,22,14),bodyM,0,-1.5,0,mt).scale.set(.85,1.3,.16);M(new THREE.SphereGeometry(.34,12,8),bodyM,.82,-.75,0,mt).scale.set(1,1.5,.5);
+    for(let f=0;f<3;f++)M(new THREE.BoxGeometry(.04,1.5,.02),L(0xffffff),(f-1)*.42,-1.6,.17,mt).material.transparent=false;
+    mt.visible=false;mitts.push(mt);arms.push(ag)}
   M(new THREE.SphereGeometry(.42,16,12),skin,0,2.05,0);for(const s of [-1,1])M(new THREE.SphereGeometry(.07,8,6),black,.38,2.08,.15*s);
   // team hats: squid hood (pointed, with fins) / octopus beanie (dome with tassels)
   const sq=new THREE.Group(),oc=new THREE.Group(),jf=new THREE.Group();g.add(sq,oc,jf);oc.visible=false;jf.visible=false;const body=g;
@@ -504,7 +509,11 @@ function makeChar(team){
   {const w=mk();M(new THREE.CylinderGeometry(.36,.28,.55,14,1,true),new THREE.MeshLambertMaterial({color:0x9aa3a8,side:THREE.DoubleSide}),0,-.4,0,w);
    M(new THREE.CircleGeometry(.33,14),bodyM,0,-.2,0,w,-Math.PI/2);M(new THREE.CircleGeometry(.28,14),metal,0,-.67,0,w,Math.PI/2);
    M(new THREE.TorusGeometry(.35,.03,6,16,Math.PI),dark,0,-.12,0,w);W.bucket=w}
-  W.glove=mk();
+  {const w=mk(),hold=new THREE.Group(),face=new THREE.Group();hold.position.set(1.25,0,0);w.add(hold);hold.add(face);
+   M(new THREE.SphereGeometry(1,24,16),bodyM,0,1.45,0,face).scale.set(.17,1.2,.85);
+   M(new THREE.SphereGeometry(.36,12,8),bodyM,0,1.05,.86,face).scale.set(.5,1.3,1);
+   for(let f=0;f<3;f++)M(new THREE.BoxGeometry(.02,1.5,.05),L(0xffffff),.17,1.75,(f-1)*.36,face);
+   M(new THREE.CylinderGeometry(.42,.36,.4,16),L(0xf4f1ea),0,.32,0,face);w.userData={face};W.glove=w}
   {const w=mk();M(new THREE.BoxGeometry(1.9,.55,1.9),dark,0,.3,0,w);M(new THREE.BoxGeometry(2.2,.18,2.2),bodyM,0,-.05,0,w);M(new THREE.CylinderGeometry(.12,.12,1.8,8),wood,0,1.4,0,w);W.stamp=w}
   const sh=new THREE.Mesh(new THREE.CircleGeometry(1.1,20),new THREE.MeshBasicMaterial({color:0x000000,transparent:true,opacity:.22,depthWrite:false}));sh.rotation.x=-Math.PI/2;sh.position.y=.04;g.add(sh);
   const ring=new THREE.Mesh(new THREE.TorusGeometry(1.6,.13,8,28),new THREE.MeshLambertMaterial({color:0xf2b705,emissive:0x6a4c00}));ring.rotation.x=Math.PI/2;ring.position.y=.35;ring.visible=false;g.add(ring);
@@ -670,8 +679,10 @@ function step(p,dt){
   const w=p.wep,rg=p.spT>0&&p.spec==='range',pb=p.spT>0&&p.spec==='paint'?1.42:1;
   if(p.fire&&!stamping&&!p.hide&&!roll&&p.ink>=w.ink&&p.cd<=0){p.cd=w.cd;p.ink-=w.ink;p.swing=1;
     if(w.glove){p.side=p.side?0:1;p.gT=.22;const sg=p.side?1:-1;
-      for(const q of players)if(q.team!==p.team&&q.dead<=0){const dx=q.x-p.x,dy=q.y-p.y;if(Math.hypot(dx,dy)<3.4+R*.5&&Math.abs(angD(Math.atan2(dy,dx),p.aim))<1.05&&Math.abs(q.z-p.z)<1.6)hurt(q,w.dmg,p)}
-      for(let k=0;k<5;k++){const a=p.aim+sg*(k/4*1.6-.8),r2=1.9+k*.2;paint(p.x+Math.cos(a)*r2,p.y+Math.sin(a)*r2,w.end,p.team,p)}}
+      for(const q of players)if(q.team!==p.team&&q.dead<=0){const dx=q.x-p.x,dy=q.y-p.y;if(Math.hypot(dx,dy)<3.8+R*.5&&Math.abs(angD(Math.atan2(dy,dx),p.aim))<1.2&&Math.abs(q.z-p.z)<1.8)hurt(q,w.slap*(w.dmg/6),p)}
+      for(const [r2,n2] of [[1.7,5],[3.1,7]])for(let k=0;k<n2;k++){const a=p.aim+sg*(k/(n2-1)*2.2-1.1);paint(p.x+Math.cos(a)*r2,p.y+Math.sin(a)*r2,w.end,p.team,p)}
+      {const dw={...w,end:.9,drip:.45};for(let k=0;k<5;k++){const a=p.aim+sg*(-.25+k*.25)+(Math.random()-.5)*.15,sp=15*(1+(Math.random()-.5)*.2),life=.32*(1+(Math.random()-.5)*.2),vz0=2.4/life,gg=2*(vz0*life+1.1)/(life*life);
+        bullets.push({x:p.x+Math.cos(a)*1.4,y:p.y+Math.sin(a)*1.4,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,L:life,t:0,z:p.z+1.4,vz:vz0,g:gg,pb,team:p.team,own:p,dr:0,w:dw})}}}
     for(let k=0;k<w.n;k++){const off=w.n>1?(k-(w.n-1)/2)*w.spread:0,a=p.aim+off+(Math.random()-.5)*w.jit,s=w.spd*(1+(Math.random()-.5)*.1)*(rg?1.25:1),life=w.life*(1+(Math.random()-.5)*.1)*(rg?1.3:1);
       const sd=w.dual?(k?1:-1)*.8:0,vz0=3*w.arc/life,gg=2*(vz0*life+1.1)/(life*life),vz=vz0+(p.isMe?gg*life*.45*Math.tan(camPitch)/.84:0);bullets.push({x:p.x+Math.cos(a)*1.2-Math.sin(p.aim)*sd,y:p.y+Math.sin(a)*1.2+Math.cos(p.aim)*sd,vx:Math.cos(a)*s,vy:Math.sin(a)*s,L:life,t:0,z:p.z+1.1,vz,g:gg,pb,team:p.team,own:p,dr:0,w})}}
   p.swing=Math.max(0,p.swing-dt*6);if(p.gT>0)p.gT-=dt;if(p.scoopT>0)p.scoopT-=dt;
@@ -681,7 +692,7 @@ function step(p,dt){
 function burst(b,x,y,hit){paint(x,y,b.w.end*(b.pb||1),b.team,b.own);if(hit)hurt(hit,b.w.dmg,b.own,b.x-b.vx*.1,b.y-b.vy*.1);
   if(b.w.splash)for(const q of players)if(q!==hit&&q.team!==b.team&&q.dead<=0&&Math.hypot(q.x-x,q.y-y)<b.w.splash)hurt(q,b.w.dmg*.6,b.own,x,y)}
 function scooper(team,x,y,z){for(const q of players){if(q.team===team||q.dead>0||!q.wep.glove||!(q.gT>0||(q.fire&&!q.hide&&!q.sj)))continue;const dx=x-q.x,dy=y-q.y;
-  if(Math.hypot(dx,dy)<3.2&&Math.abs(angD(Math.atan2(dy,dx),q.aim))<1.15&&Math.abs(z-q.z-1.2)<2.2)return q}return null}
+  if(Math.hypot(dx,dy)<3.8&&Math.abs(angD(Math.atan2(dy,dx),q.aim))<1.25&&Math.abs(z-q.z-1.2)<2.2)return q}return null}
 function updBullets(dt){
   for(let n=bullets.length-1;n>=0;n--){const b=bullets[n],px=b.x,py=b.y;
     b.x+=b.vx*dt;b.y+=b.vy*dt;b.t+=dt;b.z+=b.vz*dt;b.vz-=b.g*dt;b.dr-=dt;let done=false;
